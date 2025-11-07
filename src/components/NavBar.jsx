@@ -1,58 +1,96 @@
 import React from 'react';
-import { Home, ShoppingBag, User, Settings, Moon, Sun, LogIn, LogOut, Shield } from 'lucide-react';
+import { Home, ShoppingBag, User, LogIn, LogOut, Sun, Moon } from 'lucide-react';
 
-const NavBar = ({ activeTab, setActiveTab, isDark, toggleDark, currentUser, onLoginClick, onLogout }) => {
+function classNames(...classes) {
+  return classes.filter(Boolean).join(' ');
+}
+
+const NavBar = ({ currentUser, activeTab, onTabChange, onOpenAuth, onLogout, theme, onToggleTheme }) => {
+  const navItems = [
+    { key: 'landing', label: 'Home', icon: Home },
+    { key: 'products', label: 'Products', icon: ShoppingBag },
+  ];
+
+  if (currentUser?.role === 'seller') {
+    navItems.push({ key: 'dashboard', label: 'Dashboard', icon: User });
+  }
+  if (currentUser?.role === 'admin') {
+    navItems.push({ key: 'admin', label: 'Admin', icon: User });
+  }
+
   return (
-    <header className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-zinc-900/70 border-b border-zinc-200 dark:border-zinc-800">
+    <header className="sticky top-0 z-50 backdrop-blur supports-[backdrop-filter]:bg-background/60 bg-white/70 dark:bg-neutral-900/70 border-b border-neutral-200 dark:border-neutral-800">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-        <div onClick={() => setActiveTab('landing')} className="flex items-center gap-3 cursor-pointer">
-          <div className="h-9 w-9 rounded-lg bg-emerald-700 dark:bg-emerald-600 grid place-items-center text-white font-bold">TC</div>
-          <span className="font-semibold text-zinc-900 dark:text-zinc-100">ThriftCampus</span>
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-violet-500 to-emerald-500" />
+          <span className="text-lg font-semibold tracking-tight">ThriftCampus</span>
         </div>
-        <nav className="hidden sm:flex items-center gap-1">
-          <button onClick={() => setActiveTab('landing')} className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${activeTab==='landing' ? 'bg-emerald-700 text-white' : 'text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
-            <Home size={18}/> <span>Home</span>
-          </button>
-          <button onClick={() => setActiveTab('products')} className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${activeTab==='products' ? 'bg-emerald-700 text-white' : 'text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
-            <ShoppingBag size={18}/> <span>Products</span>
-          </button>
-          <button onClick={() => setActiveTab('dashboard')} className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${activeTab==='dashboard' ? 'bg-emerald-700 text-white' : 'text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
-            <Settings size={18}/> <span>Seller</span>
-          </button>
-          <button onClick={() => setActiveTab('profile')} className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${activeTab==='profile' ? 'bg-emerald-700 text-white' : 'text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
-            <User size={18}/> <span>Profile</span>
-          </button>
-          {currentUser?.role === 'admin' && (
-            <button onClick={() => setActiveTab('admin')} className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${activeTab==='admin' ? 'bg-emerald-700 text-white' : 'text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
-              <Shield size={18}/> <span>Admin</span>
+
+        <nav className="hidden md:flex items-center gap-1">
+          {navItems.map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              onClick={() => onTabChange(key)}
+              className={classNames(
+                'inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors',
+                activeTab === key
+                  ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900'
+                  : 'text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800'
+              )}
+            >
+              <Icon size={16} />
+              {label}
             </button>
-          )}
+          ))}
         </nav>
+
         <div className="flex items-center gap-2">
-          <button aria-label="Toggle dark mode" onClick={toggleDark} className="p-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200">
-            {isDark ? <Sun size={18}/> : <Moon size={18}/>} 
+          <button
+            aria-label="Toggle theme"
+            onClick={onToggleTheme}
+            className="inline-flex items-center justify-center rounded-md p-2 text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          >
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
           </button>
+
           {currentUser ? (
-            <button onClick={onLogout} className="flex items-center gap-2 px-3 py-2 rounded-md text-sm bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900">
-              <LogOut size={16}/> Logout
-            </button>
+            <div className="flex items-center gap-3">
+              <span className="hidden sm:inline text-sm text-neutral-600 dark:text-neutral-300">
+                {currentUser.name}
+              </span>
+              <button
+                onClick={onLogout}
+                className="inline-flex items-center gap-2 rounded-md bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 px-3 py-2 text-sm"
+              >
+                <LogOut size={16} />
+                Logout
+              </button>
+            </div>
           ) : (
-            <button onClick={onLoginClick} className="flex items-center gap-2 px-3 py-2 rounded-md text-sm bg-emerald-700 text-white hover:bg-emerald-800">
-              <LogIn size={16}/> Login
+            <button
+              onClick={onOpenAuth}
+              className="inline-flex items-center gap-2 rounded-md bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 px-3 py-2 text-sm"
+            >
+              <LogIn size={16} />
+              Login
             </button>
           )}
         </div>
       </div>
-      {/* Mobile nav */}
-      <div className="sm:hidden border-t border-zinc-200 dark:border-zinc-800 px-2 py-2 grid grid-cols-4 gap-2">
-        {[
-          {id:'landing', label:'Home', icon: Home},
-          {id:'products', label:'Products', icon: ShoppingBag},
-          {id:'dashboard', label:'Seller', icon: Settings},
-          {id:'profile', label:'Profile', icon: User},
-        ].map(item => (
-          <button key={item.id} onClick={() => setActiveTab(item.id)} className={`py-2 rounded-md text-xs flex items-center justify-center gap-2 ${activeTab===item.id ? 'bg-emerald-700 text-white' : 'text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
-            <item.icon size={16}/> {item.label}
+
+      <div className="md:hidden px-4 pb-3 flex items-center gap-2 overflow-x-auto">
+        {navItems.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => onTabChange(key)}
+            className={classNames(
+              'px-3 py-1.5 rounded-full text-sm',
+              activeTab === key
+                ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900'
+                : 'text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800'
+            )}
+          >
+            {label}
           </button>
         ))}
       </div>

@@ -1,97 +1,60 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import NavBar from './components/NavBar';
-import Landing from './components/Landing';
-import Products from './components/Products';
-import Dashboard from './components/Dashboard';
-import Profile from './components/Profile';
-import AdminPanel from './components/AdminPanel';
 import AuthModal from './components/AuthModal';
+import { Landing, Products, Dashboard, Footer } from './components/Sections';
 
-// Initialize theme as early as possible to ensure dark mode works reliably
-(function initTheme() {
-  if (typeof window === 'undefined') return;
-  try {
-    const stored = localStorage.getItem('theme');
-    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const shouldDark = stored ? stored === 'dark' : prefersDark;
-    const root = document.documentElement;
-    if (shouldDark) root.classList.add('dark');
-    else root.classList.remove('dark');
-    // normalize localStorage so subsequent reads are consistent
-    localStorage.setItem('theme', shouldDark ? 'dark' : 'light');
-  } catch (e) {
-    // no-op
-  }
-})();
+const THEME_KEY = 'theme';
 
-function App() {
+export default function App() {
   const [activeTab, setActiveTab] = useState('landing');
   const [authOpen, setAuthOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return document.documentElement.classList.contains('dark');
-    }
-    return false;
+  const [theme, setTheme] = useState(() => {
+    if (typeof window === 'undefined') return 'light';
+    const saved = localStorage.getItem(THEME_KEY);
+    return saved || 'light';
   });
 
   useEffect(() => {
     const root = document.documentElement;
-    if (isDark) root.classList.add('dark');
+    if (theme === 'dark') root.classList.add('dark');
     else root.classList.remove('dark');
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-  }, [isDark]);
+    localStorage.setItem(THEME_KEY, theme);
+  }, [theme]);
 
-  const toggleDark = () => setIsDark((d) => !d);
+  const onToggleTheme = () => setTheme(t => (t === 'dark' ? 'light' : 'dark'));
 
-  const handleLoginClick = () => setAuthOpen(true);
-  const handleLogout = () => setCurrentUser(null);
-  const handleLogin = (user) => { setCurrentUser(user); setAuthOpen(false); };
+  const handleLogin = (user) => {
+    setCurrentUser(user);
+  };
 
-  const demoUsers = useMemo(() => ([
-    { id: 1, name: 'Alya Putri', email: 'alya@campus.ac.id', role: 'seller' },
-    { id: 2, name: 'Raka Pratama', email: 'raka@campus.ac.id', role: 'buyer' },
-    { id: 3, name: 'Admin Kampus', email: 'admin@campus.ac.id', role: 'admin' },
-  ]), []);
+  const handleLogout = () => {
+    setCurrentUser(null);
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white dark:from-zinc-950 dark:to-zinc-950">
+    <div className="min-h-screen bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
       <NavBar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        isDark={isDark}
-        toggleDark={toggleDark}
         currentUser={currentUser}
-        onLoginClick={handleLoginClick}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onOpenAuth={() => setAuthOpen(true)}
         onLogout={handleLogout}
+        theme={theme}
+        onToggleTheme={onToggleTheme}
       />
 
-      {activeTab === 'landing' && (
-        <>
-          <Landing onGetStarted={() => setActiveTab('dashboard')} />
-          <Products currentUser={currentUser} />
-        </>
-      )}
+      {activeTab === 'landing' && <Landing />}
+      {activeTab === 'products' && <Products />}
+      {activeTab === 'dashboard' && <Dashboard currentUser={currentUser} />}
 
-      {activeTab === 'products' && <Products currentUser={currentUser} />}
-      {activeTab === 'dashboard' && <Dashboard currentUser={currentUser} />} 
-      {activeTab === 'profile' && <Profile currentUser={currentUser} />} 
-      {activeTab === 'admin' && currentUser?.role === 'admin' && <AdminPanel users={demoUsers} />}
+      <Footer />
 
-      <footer className="mt-16 border-t border-zinc-200 dark:border-zinc-800">
-        <div className="max-w-6xl mx-auto px-4 py-8 text-sm text-zinc-500 flex items-center justify-between">
-          <div>© {new Date().getFullYear()} ThriftCampus</div>
-          <div className="flex gap-4">
-            <a className="hover:text-emerald-700" href="#products">Produk</a>
-            <button onClick={()=>setActiveTab('dashboard')} className="hover:text-emerald-700">Jual</button>
-            <button onClick={()=>setActiveTab('profile')} className="hover:text-emerald-700">Profil</button>
-          </div>
-        </div>
-      </footer>
-
-      {authOpen && <AuthModal onClose={()=>setAuthOpen(false)} onLogin={handleLogin} />}
+      <AuthModal
+        open={authOpen}
+        onClose={() => setAuthOpen(false)}
+        onLogin={handleLogin}
+      />
     </div>
   );
 }
-
-export default App;
