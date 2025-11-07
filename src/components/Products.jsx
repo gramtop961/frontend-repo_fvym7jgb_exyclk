@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { Heart, Search } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import FiltersBar from './FiltersBar';
+import ProductCard from './ProductCard';
+import Chat from './Chat';
 
-const dummyProducts = Array.from({ length: 12 }).map((_, i) => ({
+const baseProducts = Array.from({ length: 16 }).map((_, i) => ({
   id: i + 1,
   title: [
     'Hoodie Uniqlo',
@@ -19,7 +21,7 @@ const dummyProducts = Array.from({ length: 12 }).map((_, i) => ({
 
 const SkeletonCard = () => (
   <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-    <div className="h-40 bg-zinc-200/60 dark:bg-zinc-800 animate-pulse" />
+    <div className="h-44 bg-zinc-200/60 dark:bg-zinc-800 animate-pulse" />
     <div className="p-4 space-y-3">
       <div className="h-4 bg-zinc-200/60 dark:bg-zinc-800 rounded w-3/4 animate-pulse" />
       <div className="h-4 bg-zinc-200/60 dark:bg-zinc-800 rounded w-1/2 animate-pulse" />
@@ -28,54 +30,81 @@ const SkeletonCard = () => (
   </div>
 );
 
-const Products = () => {
+const Products = ({ currentUser }) => {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [items, setItems] = useState([]);
+  const [selectedCampuses, setSelectedCampuses] = useState([]);
+  const [sortBy, setSortBy] = useState('newest');
+  const [chatProduct, setChatProduct] = useState(null);
 
   useEffect(() => {
     const t = setTimeout(() => {
-      setItems(dummyProducts);
+      setItems(baseProducts);
       setLoading(false);
     }, 900);
     return () => clearTimeout(t);
   }, []);
 
-  const filtered = items.filter(p => p.title.toLowerCase().includes(query.toLowerCase()));
+  const toggleCampus = (c) => {
+    setSelectedCampuses((prev) =>
+      prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]
+    );
+  };
+
+  const filteredSorted = useMemo(() => {
+    let data = items.filter((p) => p.title.toLowerCase().includes(query.toLowerCase()));
+    if (selectedCampuses.length) {
+      data = data.filter((p) => selectedCampuses.includes(p.campus));
+    }
+    switch (sortBy) {
+      case 'price-asc':
+        data = [...data].sort((a, b) => a.price - b.price);
+        break;
+      case 'price-desc':
+        data = [...data].sort((a, b) => b.price - a.price);
+        break;
+      case 'title-asc':
+        data = [...data].sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      default:
+        data = [...data].sort((a, b) => b.id - a.id);
+    }
+    return data;
+  }, [items, query, selectedCampuses, sortBy]);
 
   return (
     <section id="products" className="max-w-6xl mx-auto px-4 py-10">
-      <div className="flex items-center justify-between gap-4 mb-6">
+      <div className="flex items-center justify-between gap-4 mb-2">
         <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Produk Terbaru</h2>
-        <div className="relative w-full max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
-          <input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Cari produk..." className="w-full pl-9 pr-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100" />
-        </div>
       </div>
+
+      <FiltersBar
+        query={query}
+        setQuery={setQuery}
+        selectedCampuses={selectedCampuses}
+        toggleCampus={toggleCampus}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+      />
+
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {loading ? (
           Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
         ) : (
-          filtered.map(p => (
-            <div key={p.id} className="group rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900">
-              <div className="relative">
-                <img src={p.image} alt={p.title} className="h-40 w-full object-cover" />
-                <button className="absolute top-2 right-2 p-2 rounded-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur border border-zinc-200 dark:border-zinc-800 opacity-0 group-hover:opacity-100 transition">
-                  <Heart size={16} className="text-emerald-700" />
-                </button>
-              </div>
-              <div className="p-4">
-                <div className="font-semibold text-zinc-900 dark:text-zinc-100 line-clamp-1">{p.title}</div>
-                <div className="text-sm text-zinc-500">{p.campus} • {p.seller}</div>
-                <div className="mt-2 flex items-center justify-between">
-                  <div className="text-emerald-700 dark:text-emerald-400 font-bold">Rp{p.price.toLocaleString('id-ID')}</div>
-                  <button className="px-3 py-1.5 text-sm rounded-md bg-emerald-700 text-white hover:bg-emerald-800">Detail</button>
-                </div>
-              </div>
-            </div>
+          filteredSorted.map((p) => (
+            <ProductCard key={p.id} product={p} onChat={() => setChatProduct(p)} />
           ))
         )}
       </div>
+
+      {chatProduct && (
+        <Chat
+          currentUser={currentUser}
+          peerName={chatProduct.seller}
+          onClose={() => setChatProduct(null)}
+        />
+      )}
     </section>
   );
 };

@@ -51,11 +51,11 @@ function App() {
       {activeTab === 'landing' && (
         <>
           <Landing onGetStarted={() => setActiveTab('dashboard')} />
-          <Products />
+          <Products currentUser={currentUser} />
         </>
       )}
 
-      {activeTab === 'products' && <Products />}
+      {activeTab === 'products' && <Products currentUser={currentUser} />}
       {activeTab === 'dashboard' && <Dashboard currentUser={currentUser} />}
       {activeTab === 'profile' && <Profile currentUser={currentUser} />}
       {activeTab === 'admin' && currentUser?.role === 'admin' && <AdminPanel users={demoUsers} />}
