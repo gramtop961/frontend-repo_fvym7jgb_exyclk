@@ -6,6 +6,7 @@ import Dashboard from './components/Dashboard';
 import Profile from './components/Profile';
 import AdminPanel from './components/AdminPanel';
 import Auth from './components/Auth';
+import SystemPasswordGate from './components/SystemPasswordGate';
 
 // Initialize theme as early as possible to ensure dark mode works reliably
 (function initTheme() {
@@ -34,6 +35,12 @@ function App() {
     }
     return false;
   });
+  const [unlocked, setUnlocked] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('systemUnlocked') === '1';
+    }
+    return false;
+  });
 
   useEffect(() => {
     const root = document.documentElement;
@@ -53,6 +60,10 @@ function App() {
     { id: 2, name: 'Raka Pratama', email: 'raka@campus.ac.id', role: 'buyer' },
     { id: 3, name: 'Admin Kampus', email: 'admin@campus.ac.id', role: 'admin' },
   ]), []);
+
+  if (!unlocked) {
+    return <SystemPasswordGate onUnlock={() => setUnlocked(true)} />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white dark:from-zinc-950 dark:to-zinc-950">
