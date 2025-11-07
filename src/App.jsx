@@ -7,20 +7,38 @@ import Profile from './components/Profile';
 import AdminPanel from './components/AdminPanel';
 import Auth from './components/Auth';
 
+// Initialize theme as early as possible to ensure dark mode works reliably
+(function initTheme() {
+  if (typeof window === 'undefined') return;
+  try {
+    const stored = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const shouldDark = stored ? stored === 'dark' : prefersDark;
+    const root = document.documentElement;
+    if (shouldDark) root.classList.add('dark');
+    else root.classList.remove('dark');
+    // normalize localStorage so subsequent reads are consistent
+    localStorage.setItem('theme', shouldDark ? 'dark' : 'light');
+  } catch (e) {
+    // no-op
+  }
+})();
+
 function App() {
   const [activeTab, setActiveTab] = useState('landing');
   const [authOpen, setAuthOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      return document.documentElement.classList.contains('dark');
     }
     return false;
   });
 
   useEffect(() => {
-    if (isDark) document.documentElement.classList.add('dark');
-    else document.documentElement.classList.remove('dark');
+    const root = document.documentElement;
+    if (isDark) root.classList.add('dark');
+    else root.classList.remove('dark');
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
   }, [isDark]);
 
